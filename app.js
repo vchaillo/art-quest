@@ -45,7 +45,7 @@ function image(work, lazy = true) {
 function artistCard(artist) {
   const paintings = works.filter((work) => work.artistId === artist.id);
   const cover = paintings.find((work) => work.id === artist.cover) || paintings[0];
-  return `<article class="card">${favoriteButton('artists', artist.id)}<button class="image-link" data-artist="${artist.id}" aria-label="Découvrir ${escapeHtml(artist.name)}">${image(cover)}<span class="number">${String(paintings.length).padStart(2, '0')} ŒUVRES</span></button><h3><button class="title-link" data-artist="${artist.id}">${escapeHtml(artist.name)}</button></h3><p>${escapeHtml(artist.country)} · ${escapeHtml(artist.dates)}</p><div class="card-meta"><span class="tag">${escapeHtml(artist.movement)}</span><span>Découvrir ↗</span></div></article>`;
+  return `<article class="card">${favoriteButton('artists', artist.id)}<button class="image-link" data-artist="${artist.id}" aria-label="Découvrir ${escapeHtml(artist.name)}">${image(cover)}<span class="number">${String(paintings.length).padStart(2, '0')} ŒUVRE${paintings.length > 1 ? 'S' : ''}</span></button><h3><button class="title-link" data-artist="${artist.id}">${escapeHtml(artist.name)}</button></h3><p>${escapeHtml(artist.country)} · ${escapeHtml(artist.dates)}</p><div class="card-meta"><span class="tag">${escapeHtml(artist.movement)}</span><span>Découvrir ↗</span></div></article>`;
 }
 function workCard(work) {
   const artist = artists.find((item) => item.id === work.artistId);
