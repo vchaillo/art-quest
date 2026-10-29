@@ -1,5 +1,5 @@
 import { artists, works } from './data.js';
-import { searchArtists, artistWorks, imageCredit, safeUrl } from './catalog-api.js';
+import { searchArtists, artistWorks, imageCredit, safeUrl } from './catalog-api.js?v=2';
 
 // Restore remote favorite snapshots before validating saved favorite identifiers.
 try {
