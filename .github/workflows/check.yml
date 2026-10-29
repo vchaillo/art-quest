@@ -13,4 +13,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check app.js && node --check data.js && npm test
+      - run: node --check app.js && node --check data.js && node --check catalog-api.js && npm test

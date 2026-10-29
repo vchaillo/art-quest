@@ -32,3 +32,16 @@ The initial catalog is a curated snapshot, retrieved from the Met Collection API
 Sources: https://metmuseum.github.io/ and https://www.metmuseum.org/about-the-met/policies-and-documents/open-access
 
 Favorites are local to the browser. There is no authentication or cross-device synchronization in this first release. Clearing site data removes favorites. No analytics are installed. Fonts are served by Google Fonts, with local system fallbacks.
+
+## Worldwide catalog (v2)
+
+Typing at least two characters searches Wikidata for visual artists via `wbsearchentities`, then validates human/artist records using claims and descriptions. Open a result to load works linked by creator (`P170`) using WikibaseCirrusSearch, 24 at a time. The API continuation determines the next page. The count is the number of indexed records, not a catalogue raisonné or an image count. Images and file attribution are fetched through the Commons imageinfo API. Missing images remain visible as notices. This catalog is contributive and incomplete, especially for contemporary artists.
+
+All requests are public, keyless CORS requests (`origin=*`). Searches are debounced and superseded requests are aborted. API errors are displayed with retry controls; successful responses are cached in memory for the session. The Met selection remains usable if external catalogs are unavailable. Remote artist and artwork favorite snapshots are persisted alongside existing favorites, including the parent artist of a favorite artwork. Favorites remain device-local.
+
+Official API references:
+- https://www.wikidata.org/wiki/Wikidata:Data_access
+- https://www.mediawiki.org/wiki/Help:Extension:WikibaseCirrusSearch
+- https://www.mediawiki.org/wiki/API:Imageinfo
+
+Validation includes entity disambiguation, missing metadata/images, creator-scoped pagination and upstream error handling.
