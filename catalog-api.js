@@ -57,9 +57,9 @@ export function toWork(entity, artist, images, labels) {
   const mediumId = value(entity,'P186')?.id;
   return {id:'wd-'+entity.id,qid:entity.id,remote:true,artistId:artist.id,artist:artist.name,title:label(entity),date:year(value(entity,'P571')) || 'Date non renseignée',year:Number(year(value(entity,'P571')))||0,medium:labels[mediumId] ? label(labels[mediumId]) : 'Non renseignée',dimensions:'Non renseignées',collection:labels[collectionId] ? label(labels[collectionId]) : 'Collection non renseignée',image:'',fullImage:'',...images[file.replaceAll('_',' ')],file,source:`https://www.wikidata.org/wiki/${entity.id}`,credit:'Wikidata · Wikimedia Commons'};
 }
-export async function artistWorks(artist, offset = 0, signal) {
+export async function artistWorks(artist, offset = 0, signal, imagesOnly = false) {
   if (!/^Q\d+$/.test(artist.qid)) throw new Error('Identifiant d’artiste invalide.');
-  const data = await request(WIKIDATA,{action:'query',list:'search',srsearch:`haswbstatement:P170=${artist.qid}`,srnamespace:'0',srlimit:'24',sroffset:String(offset),srprop:''},signal);
+  const data = await request(WIKIDATA,{action:'query',list:'search',srsearch:`haswbstatement:P170=${artist.qid}${imagesOnly ? ' haswbstatement:P18' : ''}`,srnamespace:'0',srlimit:'24',sroffset:String(offset),srprop:''},signal);
   const details = await entities((data.query?.search || []).map(item => item.title),signal);
   const entries = (data.query?.search || []).map(item => details[item.title]).filter(Boolean);
   const labelIds = [...new Set(entries.flatMap(e=>[value(e,'P195')?.id,value(e,'P186')?.id]).filter(Boolean))];

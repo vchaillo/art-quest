@@ -81,7 +81,7 @@ function render() {
   items.sort((a, b) => state.sort === 'date' ? Number(a.year) - Number(b.year) : (a.name || a.title).localeCompare(b.name || b.title, 'fr'));
   $('#sectionTitle').textContent = state.type === 'artists' ? (state.page === 'favorites' ? 'Mes peintres favoris' : 'Rencontrez les maîtres') : (state.page === 'favorites' ? 'Mes œuvres favorites' : 'Un monde de couleurs');
   $('#results').textContent = `${items.length} ${state.type === 'artists' ? 'peintre' : 'œuvre'}${items.length > 1 ? 's' : ''} · ${state.page === 'favorites' ? 'ma collection' : 'sélection & découvertes'}`;
-  $('#grid').innerHTML = items.length ? items.map(state.type === 'artists' ? artistCard : workCard).join('') : `<div class="empty"><h3>${state.page === 'favorites' ? 'Votre collection attend ses premiers coups de cœur.' : 'Aucun résultat pour le moment.'}</h3><p>${state.page === 'favorites' ? 'Cliquez sur le cœur d’un peintre ou d’une œuvre pour le retrouver ici.' : 'Essayez un autre nom ou un autre mouvement.'}</p><button class="primary" id="resetFilters">Explorer la sélection ↗</button></div>`;
+  $('#grid').innerHTML = items.length ? items.map(state.type === 'artists' ? artistCard : workCard).join('') : `<div class="empty"><h3>${state.page === 'favorites' ? 'Votre collection attend ses premiers coups de cœur.' : 'Aucune correspondance dans la sélection du Met.'}</h3><p>${state.page === 'favorites' ? 'Cliquez sur le cœur d’un peintre ou d’une œuvre pour le retrouver ici.' : 'Les résultats du catalogue mondial apparaissent au-dessus.'}</p><button class="primary" id="resetFilters">Explorer la sélection ↗</button></div>`;
   attachImageFallbacks();
   renderWorldSearch();
 }
@@ -173,13 +173,13 @@ function renderWorldSearch() {
   attachImageFallbacks();
 }
 function worldArtistHtml(artist, page) {
-  const paintings=works.filter(work=>work.artistId===artist.id);
-  return `<div class="artist-intro"><div class="eyebrow">Catalogue mondial</div><h2>${escapeHtml(artist.name)}</h2><p>${escapeHtml(artist.dates)} · ${escapeHtml(artist.bio)}</p>${favoriteButton('artists',artist.id,true)}<div class="source-links"><a href="${escapeHtml(artist.source)}" target="_blank" rel="noopener noreferrer">Wikidata ↗</a>${artist.wikipedia ? `<a href="${escapeHtml(artist.wikipedia)}" target="_blank" rel="noopener noreferrer">Biographie Wikipédia ↗</a>` : ''}</div></div><div class="section-heading"><h2>Les œuvres répertoriées</h2><span>${paintings.length} chargées${page.total !== null ? ' / '+page.total+' référencées' : ''}</span></div><p class="catalog-note">Catalogue contributif, non exhaustif. Certaines œuvres n’ont pas de reproduction disponible. Les images et leurs licences proviennent de Wikimedia Commons.</p><div class="grid artist-grid">${paintings.map(workCard).join('')}</div><div class="network-status" role="status">${page.loading ? 'Chargement des œuvres…' : page.error ? escapeHtml(page.error) : !paintings.length ? 'Aucune œuvre répertoriée trouvée pour cet artiste.' : page.imageWarning ? 'Les notices sont chargées, mais le service d’images est indisponible.' : ''}</div>${!page.loading && (page.next !== null || page.error) ? `<button class="primary" data-artist-more="${artist.id}">${page.error ? 'Réessayer' : 'Charger davantage d’œuvres'}</button>` : ''}`;
+  const paintings=(page.ids || []).map(id=>works.find(work=>work.id===id)).filter(Boolean);
+  return `<div class="artist-intro"><div class="eyebrow">Catalogue mondial</div><h2>${escapeHtml(artist.name)}</h2><p>${escapeHtml(artist.dates)} · ${escapeHtml(artist.bio)}</p>${favoriteButton('artists',artist.id,true)}<div class="source-links"><a href="${escapeHtml(artist.source)}" target="_blank" rel="noopener noreferrer">Wikidata ↗</a>${artist.wikipedia ? `<a href="${escapeHtml(artist.wikipedia)}" target="_blank" rel="noopener noreferrer">Biographie Wikipédia ↗</a>` : ''}</div></div><div class="section-heading"><h2>Les œuvres répertoriées</h2><span>${paintings.length} chargées${page.total !== null ? ' / '+page.total+' référencées' : ''}</span></div><div class="tabs" role="group" aria-label="Reproductions"><button data-images-mode="all" data-images-artist="${artist.id}" class="${!page.imagesOnly ? 'active' : ''}" aria-pressed="${!page.imagesOnly}">Toutes les œuvres</button><button data-images-mode="images" data-images-artist="${artist.id}" class="${page.imagesOnly ? 'active' : ''}" aria-pressed="${!!page.imagesOnly}">Avec reproduction</button></div><p class="catalog-note">Catalogue contributif, non exhaustif. Certaines œuvres n’ont pas de reproduction disponible. Les images et leurs licences proviennent de Wikimedia Commons.</p><div class="grid artist-grid">${paintings.map(workCard).join('')}</div><div class="network-status" role="status">${page.loading ? 'Chargement des œuvres…' : page.error ? escapeHtml(page.error) : !paintings.length ? 'Aucune œuvre répertoriée trouvée pour cet artiste.' : page.imageWarning ? 'Les notices sont chargées, mais le service d’images est indisponible.' : ''}</div>${!page.loading && (page.next !== null || page.error) ? `<button class="primary" data-artist-more="${artist.id}">${page.error ? 'Réessayer' : 'Charger davantage d’œuvres'}</button>` : ''}`;
 }
 function openWorldArtist(artist) {
   artistController?.abort(); activeArtist=artist.id;
   let page=worldPages.get(artist.id);
-  if (!page) {page={next:0,total:null,loading:false,error:''};worldPages.set(artist.id,page);}
+  if (!page) {page={next:0,total:null,loading:false,error:'',ids:[],imagesOnly:false};worldPages.set(artist.id,page);}
   openDialog(worldArtistHtml(artist,page));
   if (page.total===null) loadWorldWorks(artist);
 }
@@ -189,9 +189,9 @@ async function loadWorldWorks(artist) {
   const scrollTop=$('#detail').scrollTop;
   $('#dialogContent').innerHTML=worldArtistHtml(artist,page);attachImageFallbacks();$('#detail').scrollTop=scrollTop;
   try {
-    const result=await artistWorks(artist,page.next || 0,controller.signal);
+    const result=await artistWorks(artist,page.next || 0,controller.signal,page.imagesOnly);
     if (controller.signal.aborted) return;
-    register(result.works,works);page.next=result.next;page.total=result.total;page.imageWarning=result.imageWarning;
+    register(result.works,works);page.ids=[...new Set([...(page.ids || []),...result.works.map(w=>w.id)])];page.next=result.next;page.total=result.total;page.imageWarning=result.imageWarning;
   } catch(error) {if (!controller.signal.aborted)page.error=error.message;}
   finally {
     page.loading=false;
@@ -211,6 +211,10 @@ document.addEventListener('click',event=>{
   const button=event.target.closest('button');if(!button)return;
   if(button.hasAttribute('data-world-more'))runWorldSearch(true);
   if(button.hasAttribute('data-world-retry'))runWorldSearch(false);
+  if(button.dataset.imagesArtist){
+    const artist=artists.find(a=>a.id===button.dataset.imagesArtist);
+    if(artist){artistController?.abort();const page={next:0,total:null,loading:false,error:'',ids:[],imagesOnly:button.dataset.imagesMode==='images'};worldPages.set(artist.id,page);loadWorldWorks(artist);}
+  }
   if(button.dataset.artistMore){const artist=artists.find(a=>a.id===button.dataset.artistMore);if(artist)loadWorldWorks(artist);}
   if(button.dataset.worldQuery){$('#detail').close();state.page='explore';state.type='artists';state.query=button.dataset.worldQuery;$('#search').value=state.query;location.hash='explore';scheduleWorldSearch();render();$('#gallery').scrollIntoView({behavior:'smooth'});}
 });
